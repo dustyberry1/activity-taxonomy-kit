@@ -1,6 +1,6 @@
 import Foundation
 
-public struct ActivityEntry: Identifiable, Hashable, Sendable {
+public struct ActivityEntry: Identifiable, Hashable, Sendable, Codable {
     public let id: String
     public let name: String
     public let variableKey: String
@@ -9,8 +9,8 @@ public struct ActivityEntry: Identifiable, Hashable, Sendable {
     public let defaultSortOrder: Int?
 
     public init(
-        id: String,
         name: String,
+        id: String,
         variableKey: String,
         category: ActivityCategory,
         iconFilename: String,
@@ -28,4 +28,3 @@ public struct ActivityEntry: Identifiable, Hashable, Sendable {
         defaultSortOrder != nil
     }
 }
-
