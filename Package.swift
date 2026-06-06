@@ -4,8 +4,8 @@ import PackageDescription
 let package = Package(
     name: "ActivityTaxonomyKit",
     platforms: [
-        .iOS(.v16),
-        .macOS(.v13),
+        .iOS(.v17),
+        .macOS(.v14),
     ],
     products: [
         .library(
@@ -16,13 +16,16 @@ let package = Package(
     targets: [
         .target(
             name: "ActivityTaxonomyKit",
-            path: "Sources/ActivityTaxonomyKit"
+            path: "Sources/ActivityTaxonomyKit",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "ActivityTaxonomyKitTests",
             dependencies: ["ActivityTaxonomyKit"],
             path: "Tests/ActivityTaxonomyKitTests"
         ),
-    ]
+    ],
+    swiftLanguageVersions: [.v5]
 )
-

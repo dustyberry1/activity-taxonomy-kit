@@ -42,5 +42,41 @@ final class ActivityTaxonomyKitTests: XCTestCase {
         let result = matcher.search(query: "WINE")
         XCTAssertEqual(result, ["wine"])
     }
-}
 
+    func testBuiltInCatalogLoadsFromBundledJSON() throws {
+        let catalog = try BuiltInActivityCatalog.load(resourceName: "activity-catalog", in: Bundle.module)
+
+        XCTAssertGreaterThan(catalog.all.count, 0)
+        XCTAssertEqual(catalog.activity(for: "stress")?.id, "high_stress")
+        XCTAssertEqual(catalog.activity(for: "stress")?.category, .stressAndMentalState)
+    }
+
+    func testCatalogCanLoadFromCustomJSON() throws {
+        let payload = """
+{
+  "schema": "activity-taxonomy-catalog-v1",
+  "version": "1.0",
+  "activities": [
+    {
+      "id": "hydration",
+      "name": "Hydration",
+      "variableKey": "hydration",
+      "category": "bodyAndPhysicalState",
+      "iconFilename": "drop"
+    }
+  ]
+}
+"""
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("activity-taxonomy-catalog-test.json")
+        try payload.data(using: .utf8)!.write(to: tempURL)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        let catalog = try BuiltInActivityCatalog.load(contentsOf: tempURL)
+        XCTAssertEqual(catalog.all.count, 1)
+        XCTAssertEqual(catalog.activity(for: "hydration")?.name, "Hydration")
+    }
+
+    func testLoadingMissingCatalogResourceThrows() {
+        XCTAssertThrowsError(try BuiltInActivityCatalog.load(resourceName: "missing-activity-catalog", in: Bundle.module))
+    }
+}
