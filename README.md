@@ -5,7 +5,29 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/dustyberry1/activity-taxonomy-kit/actions/workflows/swift.yml/badge.svg)](https://github.com/dustyberry1/activity-taxonomy-kit/actions/workflows/swift.yml)
 
-Reusable Swift package for activity taxonomies and icon matching. A small, focused building block for health and wellness apps that need a standardized catalog of trackable activities.
+Reusable Swift package for activity taxonomies and SF Symbol icon matching. A small, focused building block for health and wellness apps that need a standardized, swappable catalog of trackable activities.
+
+## Why this matters
+
+Health apps frequently reinvent the same wheel: a list of things a person can track (stress, sleep, hydration, exercise…), human-readable names for them, and icon suggestions to go with them. Every team writes this from scratch, names things inconsistently, and ends up with variable keys like `"stressLevel"`, `"stress_lvl"`, and `"Stress"` spread across their codebase.
+
+ActivityTaxonomyKit gives you:
+
+- **Stable variable keys** — `"stress"`, `"hydration"`, `"sleep"` — that you can use as dictionary keys, HealthKit identifiers, or analytics event names without worrying about typos
+- **A JSON-driven catalog** you can swap per-user or per-app-version without shipping new code
+- **Icon matching that actually works** — tokenising both the activity name and SF Symbol names so `"Evening coffee"` reliably suggests `"cup.and.saucer.fill"`
+- **Zero dependencies** beyond Foundation and optional SwiftUI
+
+If you're building a journal, symptom tracker, wellness coach, or research data-collection app, this package handles the taxonomy layer so you can focus on the product.
+
+## Who this is for
+
+| Role | How you'd use it |
+|---|---|
+| iOS / macOS app developer | Drop in the catalog, use variable keys as stable identifiers throughout your app |
+| Health app indie dev | Customise the JSON catalog with your own activities without forking |
+| Research / clinical tool builder | Use `BuiltInActivityCatalog.search(query:)` to power a participant-facing activity picker |
+| Design system author | Use `ActivityIconMatcher` to auto-suggest SF Symbols for user-defined tracking items |
 
 ## What this gives you
 
@@ -39,26 +61,59 @@ Or add via Xcode: **File → Add Package Dependencies** and paste the repo URL.
 
 ## Quick start
 
+### Look up activities from the built-in catalog
+
 ```swift
 import ActivityTaxonomyKit
 
-// Load the bundled catalog
 let catalog = BuiltInActivityCatalog.builtIn()
 
-// Look up an activity by its variable key
-let name = catalog.displayName(for: "stress")          // "Stress"
-let icon = catalog.iconName(for: "stress")             // "brain"
+// Stable display name and icon for a variable key
+let name = catalog.displayName(for: "stress")   // "Stress"
+let icon = catalog.iconName(for: "stress")      // "brain"
 
-// Browse by category
-let foodActivities = catalog.activities(in: .foodAndDrink)
+// Browse all activities in a category
+let foodItems = catalog.activities(in: .foodAndDrink)
+for item in foodItems {
+    print("\(item.name) → \(item.iconFilename)")
+    // "Caffeine → cup.and.saucer.fill"
+    // "Alcohol → wineglass"
+    // ...
+}
+```
 
-// Search across the catalog
+### Power a search-as-you-type picker
+
+```swift
+let catalog = BuiltInActivityCatalog.builtIn()
+
+// Full-text search across names and keys — good for a UISearchBar / .searchable
 let results = catalog.search(query: "sleep")
+// → [ActivityEntry(id: "sleep", name: "Sleep", category: .bodyAndPhysicalState, …)]
+```
 
-// Suggest an SF Symbol icon for a user-typed activity name
-let iconMatcher = ActivityIconMatcher(iconNames: ["coffee", "wine", "brain", "bed", "sparkle"])
-let suggested = iconMatcher.suggestIcon(for: "Evening coffee")   // "coffee"
-let matches   = iconMatcher.search(query: "cof")                 // ["coffee"]
+### Suggest an SF Symbol for a user-defined activity
+
+```swift
+// Works with any SF Symbol list — pass the symbols your app already uses
+let allSymbols = UIImage.systemImageNames  // or your own curated list
+let matcher = ActivityIconMatcher(iconNames: allSymbols)
+
+matcher.suggestIcon(for: "Morning run")       // "figure.run"
+matcher.suggestIcon(for: "Evening coffee")    // "cup.and.saucer.fill"
+matcher.suggestIcon(for: "Anxiety check-in")  // "brain.head.profile"
+
+// Fuzzy search for an icon picker UI
+let hits = matcher.search(query: "heart")
+// → ["heart", "heart.fill", "heart.circle", …]
+```
+
+### Load a custom catalog (e.g. from your server)
+
+```swift
+// Swap in a per-user or per-study catalog without changing code
+let url = Bundle.main.url(forResource: "study-catalog", withExtension: "json")!
+let catalog = try BuiltInActivityCatalog.load(contentsOf: url)
 ```
 
 ## Architecture
